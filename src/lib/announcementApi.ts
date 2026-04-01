@@ -19,10 +19,12 @@ announcementApi.interceptors.request.use(
   }
 );
 
-export const getAnnouncements = async () => {
+export const getAnnouncements = async (className?: string) => {
   try {
-    const response = await announcementApi.get("/announcement");
-    return response.data || [];
+    const response = await announcementApi.get("/announcement", {
+      params: { className },
+    });
+    return response.data?.data || response.data || [];
   } catch (error) {
     console.error("Failed to fetch announcements:", error);
     return [];
