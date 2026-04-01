@@ -25,29 +25,24 @@ import {
 const { Content } = Layout;
 const { Title, Text, Paragraph } = Typography;
 
-const mockSession = {
-  id: 3,
-  sessionNumber: 3,
-  totalSessions: 12,
-  title: 'useEffect and useState with React',
-  status: 'Rescheduled', 
-  description:
-    'This session provides a deep dive into two of the most fundamental React Hooks: `useState` for managing state within functional components and `useEffect` for handling side effects like data fetching, subscriptions, or manually changing the DOM. We will cover the core concepts, common patterns, and potential pitfalls to avoid when working with these hooks.',
-  praetorian: {
-    name: 'Reynard Amadeus',
-    avatarUrl: '#'
-  },
-  className: 'Front-End Development',
-  recordingUrl: '#', 
-  date: 'Tuesday, July 19 2025',
-  startTime: '18:00',
-  endTime: '20:00',
-  rescheduleInfo: {
-    newDate: 'Wednesday, July 20 2025',
-    newStartTime: '19:00',
-    newEndTime: '21:00',
-  }
-};
+import { useParams } from 'react-router';
+import { useEffect, useState } from 'react';
+import { getSessionDetail } from '../lib/learningApi';
+import dayjs from 'dayjs';
+
+interface SessionData {
+    id: number;
+    sessionId: number;
+    schedule: string;
+    recordingUrl: string;
+    sessionDocumentationUrl: string;
+    class: {
+        name: string;
+        praetorianId: number;
+    };
+    absences: { status: string }[];
+    rescheduleHistory: { schedule: string, status: string }[];
+}
 
 const getStatusTag = (status: string) => {
   switch (status) {
@@ -67,6 +62,58 @@ const getStatusTag = (status: string) => {
 };
 
 export default function SessionDetail() {
+  const { id } = useParams();
+  const [session, setSession] = useState<SessionData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (id) {
+        setLoading(true);
+        getSessionDetail(id)
+            .then(setSession)
+            .catch(err => console.error("Failed to fetch session detail:", err))
+            .finally(() => setLoading(false));
+    }
+  }, [id]);
+
+  if (loading) return <Layout style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><SyncOutlined spin style={{ fontSize: 24 }} /></Layout>;
+  if (!session) return <Layout style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Text>Session not found</Text></Layout>;
+
+  const scheduleDate = dayjs(session?.schedule);
+  const userAbsence = session?.absences?.[0];
+  const latestReschedule = session?.rescheduleHistory?.[session?.rescheduleHistory?.length - 1];
+
+  let status = 'Upcoming';
+  if (userAbsence) {
+      status = userAbsence.status === 'present' ? 'Attended' : 'Absent';
+  } else if (latestReschedule?.status === 'approved') {
+      status = 'Rescheduled';
+  } else if (scheduleDate.isBefore(dayjs())) {
+      status = 'Upcoming';
+  }
+
+  const sessionDisplay = {
+    sessionNumber: session.sessionId,
+    totalSessions: 12, 
+    title: session.class.name,
+    status: status,
+    description: `This is session ${session.sessionId} of the ${session.class.name} course.`,
+    praetorian: {
+      name: `Praetorian ID: ${session.class.praetorianId}`, 
+      avatarUrl: '#'
+    },
+    className: session.class.name,
+    recordingUrl: session.recordingUrl,
+    date: scheduleDate.format('dddd, MMMM D YYYY'),
+    startTime: scheduleDate.format('HH:mm'),
+    endTime: scheduleDate.add(2, 'hour').format('HH:mm'),
+    rescheduleInfo: latestReschedule ? {
+        newDate: dayjs(latestReschedule.schedule).format('dddd, MMMM D YYYY'),
+        newStartTime: dayjs(latestReschedule.schedule).format('HH:mm'),
+        newEndTime: dayjs(latestReschedule.schedule).add(2, 'hour').format('HH:mm'),
+    } : null
+  };
+
   const {
     sessionNumber,
     totalSessions,
@@ -74,13 +121,12 @@ export default function SessionDetail() {
     date,
     startTime,
     endTime,
-    status,
     description,
     praetorian,
     className,
     recordingUrl,
     rescheduleInfo 
-  } = mockSession;
+  } = sessionDisplay;
 
   return (
     <Layout style={{ minHeight: '100vh', background: '#f0f2f5' }}>
@@ -97,7 +143,7 @@ export default function SessionDetail() {
         >
           <Breadcrumb
             items={[
-              { href: '/', title: <HomeOutlined /> },
+              { href: '/dashboard', title: <HomeOutlined /> },
               { title: `Session ${sessionNumber}` },
             ]}
           />
@@ -111,11 +157,11 @@ export default function SessionDetail() {
                 <Space split={<Divider type="vertical" />} size="small">
                   <Text type="secondary">
                     <CalendarOutlined style={{ marginRight: '8px' }} />
-                    {status === 'Rescheduled' ? rescheduleInfo.newDate : date}
+                    {status === 'Rescheduled' && rescheduleInfo ? rescheduleInfo.newDate : date}
                   </Text>
                   <Text type="secondary">
                     <ClockCircleOutlined style={{ marginRight: '8px' }} />
-                    {status === 'Rescheduled' ? `${rescheduleInfo.newStartTime} - ${rescheduleInfo.newEndTime}` : `${startTime} - ${endTime}`}
+                    {status === 'Rescheduled' && rescheduleInfo ? `${rescheduleInfo.newStartTime} - ${rescheduleInfo.newEndTime}` : `${startTime} - ${endTime}`}
                   </Text>
                 </Space>
               </Col>
