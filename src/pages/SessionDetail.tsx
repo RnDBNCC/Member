@@ -23,12 +23,14 @@ import {
 } from '@ant-design/icons';
 
 const { Content } = Layout;
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 import { useParams } from 'react-router';
 import { useEffect, useState } from 'react';
 import { getSessionDetail } from '../lib/learningApi';
 import dayjs from 'dayjs';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface SessionData {
     id: number;
@@ -42,6 +44,8 @@ interface SessionData {
     };
     absences: { status: string }[];
     rescheduleHistory: { schedule: string, status: string }[];
+    praetorianName?: string;
+    sessionDescription?: string;
 }
 
 const getStatusTag = (status: string) => {
@@ -97,9 +101,9 @@ export default function SessionDetail() {
     totalSessions: 12, 
     title: session.class.name,
     status: status,
-    description: `This is session ${session.sessionId} of the ${session.class.name} course.`,
+    description: session.sessionDescription || `This is session ${session.sessionId} of the ${session.class.name} course.`,
     praetorian: {
-      name: `Praetorian ID: ${session.class.praetorianId}`, 
+      name: session.praetorianName || `Praetorian ID: ${session.class.praetorianId}`, 
       avatarUrl: '#'
     },
     className: session.class.name,
@@ -189,7 +193,28 @@ export default function SessionDetail() {
               <Col xs={24} lg={16}>
                 <Space direction="vertical" size="large" style={{ width: '100%' }}>
                   <Card type="inner" title="Session Description">
-                    <Paragraph>{description}</Paragraph>
+                    <div 
+                      className="markdown-body" 
+                      style={{ 
+                        wordBreak: 'break-word', 
+                        overflowWrap: 'break-word',
+                        lineHeight: 1.6 
+                      }}
+                    >
+                      <ReactMarkdown 
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          h1: ({node, ...props}) => <h1 style={{fontSize: '1.5em', fontWeight: 'bold', marginBottom: '0.5em', marginTop: '1em'}} {...props} />,
+                          h2: ({node, ...props}) => <h2 style={{fontSize: '1.25em', fontWeight: 'bold', marginBottom: '0.5em', marginTop: '1em'}} {...props} />,
+                          ul: ({node, ...props}) => <ul style={{listStyleType: 'disc', paddingLeft: '1.5em', marginBottom: '1em'}} {...props} />,
+                          li: ({node, ...props}) => <li style={{marginBottom: '0.25em'}} {...props} />,
+                          p: ({node, ...props}) => <p style={{marginBottom: '1em'}} {...props} />,
+                          strong: ({node, ...props}) => <strong style={{fontWeight: 600}} {...props} />,
+                        }}
+                      >
+                        {description?.replace(/^[ \t]+/gm, '')}
+                      </ReactMarkdown>
+                    </div>
                   </Card>
                   
                   <Card type="inner" title="Resources">

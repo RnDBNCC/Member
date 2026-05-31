@@ -94,7 +94,7 @@ export default function Dashboard() {
     try {
       const classData = await getMyClass();
       const sessionData = await getMySessions();
-      const announcementData = await getAnnouncements();
+      const announcementData = await getAnnouncements(classData?.name);
 
       setEnrolledClass(classData || null);
       setAnnouncements(announcementData);
