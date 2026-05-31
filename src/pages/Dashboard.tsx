@@ -8,16 +8,20 @@ import {
   Space,
   Avatar,
   Dropdown,
+  Pagination,
+  Button,
   type MenuProps
 } from 'antd';
 import {
   UserOutlined,
   CalendarOutlined,
   BookOutlined,
-  LogoutOutlined
+  LogoutOutlined,
+  NotificationOutlined,
+  DownOutlined,
+  UpOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router';
-import { NotificationOutlined } from '@ant-design/icons';
 
 const { Content } = Layout;
 const { Title, Text, Paragraph } = Typography;
@@ -89,6 +93,9 @@ export default function Dashboard() {
   const [sessions, setSessions] = useState<DashboardSession[]>([]);
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyPage, setHistoryPage] = useState(1);
+  const pageSize = 2;
 
   const fetchDashboardData = async () => {
     try {
@@ -180,6 +187,16 @@ export default function Dashboard() {
     upcoming: sessions.filter(s => s.status === 'Upcoming').length,
     absences: sessions.filter(s => s.status === 'Absent').length
   };
+  
+  const sortedAnnouncements = [...announcements].sort((a, b) => 
+    dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf()
+  );
+
+  const latestAnnouncement = sortedAnnouncements[0];
+  const olderAnnouncements = sortedAnnouncements.slice(1);
+
+  const startIndex = (historyPage - 1) * pageSize;
+  const paginatedOlder = olderAnnouncements.slice(startIndex, startIndex + pageSize);
 
   return (
     <Layout className="min-h-screen">
@@ -246,43 +263,142 @@ export default function Dashboard() {
           )}
 
           {/* Announcements Section */}
-          {announcements.length > 0 && (
+          {sortedAnnouncements.length > 0 && (
             <div className="mb-6">
               <Title level={4} className="!mb-4 !text-gray-800 flex items-center">
-                <NotificationOutlined className="mr-2 text-yellow-500" />
-                Latest Announcements
+                <NotificationOutlined className="mr-2 text-amber-500 animate-pulse" />
+                Announcements
               </Title>
-              <div className="space-y-4">
-                {announcements.map((announcement) => (
-                  <Card key={announcement.id} className="border-0 border-l-4 border-l-yellow-400 bg-yellow-50 shadow-sm hover:shadow-md transition-all">
-                    <div className="flex justify-between items-start mb-2">
-                      <Title level={5} className="!mb-0 text-blue-800">
-                        {announcement.name}
+              
+              {latestAnnouncement && (
+                <Card 
+                  className="border-0 border-l-4 border-l-amber-500 shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden"
+                  style={{
+                    background: 'linear-gradient(135deg, #fffbeb 0%, #fff7ed 100%)',
+                    borderRadius: '12px'
+                  }}
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <Space align="center" size="small">
+                      <span className="relative flex h-2.5 w-2.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-600"></span>
+                      </span>
+                      <Tag color="warning" className="font-semibold text-amber-700 bg-amber-100 border-amber-200">
+                        LATEST
+                      </Tag>
+                      <Title level={5} className="!mb-0 text-amber-950 font-bold">
+                        {latestAnnouncement.name}
                       </Title>
-                      {announcement.createdAt && (
-                        <Text className="text-xs text-gray-500">
-                          {dayjs(announcement.createdAt).format("DD MMM YYYY, HH:mm")}
-                        </Text>
-                      )}
-                    </div>
-                    {announcement.image && (
-                      <div className="mb-4 rounded-xl overflow-hidden max-h-64 flex justify-center">
-                        <img 
-                          src={announcement.image} 
-                          alt={announcement.name} 
-                          className="w-full h-full object-contain"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
-                        />
-                      </div>
+                    </Space>
+                    {latestAnnouncement.createdAt && (
+                      <Text className="text-xs text-amber-700/80 font-medium">
+                        {dayjs(latestAnnouncement.createdAt).format("DD MMM YYYY, HH:mm")}
+                      </Text>
                     )}
-                    <Paragraph className="text-gray-700 mb-0 whitespace-pre-wrap">
-                      {announcement.content}
-                    </Paragraph>
-                  </Card>
-                ))}
-              </div>
+                  </div>
+                  
+                  {latestAnnouncement.image && (
+                    <div className="mb-4 rounded-xl overflow-hidden max-h-72 flex justify-center bg-white/50 backdrop-blur-sm p-2 border border-amber-100 shadow-inner">
+                      <img 
+                        src={latestAnnouncement.image} 
+                        alt={latestAnnouncement.name} 
+                        className="w-full h-full object-contain rounded-lg hover:scale-[1.01] transition-transform duration-300"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
+                  
+                  <Paragraph className="text-gray-700 mb-0 whitespace-pre-wrap leading-relaxed">
+                    {latestAnnouncement.content}
+                  </Paragraph>
+
+                  {/* Toggle past announcements trigger inside the card or under it */}
+                  {olderAnnouncements.length > 0 && (
+                    <div className="mt-5 pt-4 border-t border-amber-200/50 flex justify-between items-center">
+                      <Text className="text-xs text-amber-700/70">
+                        There are {olderAnnouncements.length} older announcement{olderAnnouncements.length > 1 ? 's' : ''} available.
+                      </Text>
+                      <Button 
+                        type="primary"
+                        ghost
+                        size="small"
+                        onClick={() => {
+                          setShowHistory(!showHistory);
+                          setHistoryPage(1); // Reset to page 1 on toggle
+                        }}
+                        className="flex items-center text-xs font-semibold border-amber-500 text-amber-600 hover:text-amber-700 hover:border-amber-600 hover:bg-amber-50"
+                      >
+                        <span className="mr-1">{showHistory ? 'Hide History' : 'View Past Announcements'}</span>
+                        {showHistory ? <UpOutlined style={{ fontSize: '10px' }} /> : <DownOutlined style={{ fontSize: '10px' }} />}
+                      </Button>
+                    </div>
+                  )}
+                </Card>
+              )}
+
+              {/* Collapsible Section for Older Announcements */}
+              {showHistory && olderAnnouncements.length > 0 && (
+                <div className="mt-4 space-y-4 transition-all duration-300">
+                  <div className="flex items-center gap-2 px-1 py-1">
+                    <div className="h-[1px] bg-gray-200 flex-grow" />
+                    <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Past Announcements</Text>
+                    <div className="h-[1px] bg-gray-200 flex-grow" />
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {paginatedOlder.map((announcement) => (
+                      <Card 
+                        key={announcement.id} 
+                        className="border-0 border-l-4 border-l-slate-400 bg-white shadow-sm hover:shadow-md transition-all duration-200"
+                        styles={{ body: { padding: '16px' } }}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <Title level={5} className="!mb-0 text-slate-800 font-semibold text-sm">
+                            {announcement.name}
+                          </Title>
+                          {announcement.createdAt && (
+                            <Text className="text-xs text-gray-400">
+                              {dayjs(announcement.createdAt).format("DD MMM YYYY, HH:mm")}
+                            </Text>
+                          )}
+                        </div>
+                        {announcement.image && (
+                          <div className="mb-3 rounded-lg overflow-hidden max-h-48 flex justify-center bg-gray-50 border border-gray-100 p-1">
+                            <img 
+                              src={announcement.image} 
+                              alt={announcement.name} 
+                              className="w-full h-full object-contain rounded-md"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
+                            />
+                          </div>
+                        )}
+                        <Paragraph className="text-gray-600 mb-0 text-sm whitespace-pre-wrap leading-relaxed">
+                          {announcement.content}
+                        </Paragraph>
+                      </Card>
+                    ))}
+                  </div>
+
+                  {/* Pagination for History */}
+                  {olderAnnouncements.length > pageSize && (
+                    <div className="flex justify-center pt-2">
+                      <Pagination
+                        current={historyPage}
+                        pageSize={pageSize}
+                        total={olderAnnouncements.length}
+                        onChange={(page) => setHistoryPage(page)}
+                        size="small"
+                        showSizeChanger={false}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
