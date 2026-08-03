@@ -1,25 +1,25 @@
-import axios from "axios";
-import Cookies from "js-cookie";
+import { API } from "./api";
 
-const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
-});
+export const authAPI = {
+  login: (
+    identifier: string,
+    password: string
+  ) =>
+    API.post("/login", {
+      identifier,
+      password,
+      appCode: "brac",
+    }),
 
-apiClient.interceptors.request.use((config) => {
-  const token = Cookies.get("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+  forgotPassword: (email: string) =>
+    API.post("/forgot-password", {
+      email,
+      appCode: "brac",
+    }),
 
-export interface ChangePasswordPayload {
-  oldPassword: string;
-  newPassword: string;
-  confirmPassword: string;
-}
-
-export const changePassword = async (payload: ChangePasswordPayload) => {
-  const response = await apiClient.post("/change-password", payload);
-  return response.data;
+  changePassword: (data: {
+    oldPassword: string;
+    newPassword: string;
+  }) =>
+    API.put("/users/password", data),
 };

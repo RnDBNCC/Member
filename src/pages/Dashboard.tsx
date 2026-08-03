@@ -67,7 +67,7 @@ import Cookies from 'js-cookie';
 import dayjs from 'dayjs';
 import { getMyClass, getMySessions } from '../lib/learningApi';
 import { getAnnouncements } from '../lib/announcementApi';
-import { changePassword } from '../lib/authAPI';
+import { authAPI } from '../lib/authAPI';
 import { useEffect, useState } from 'react';
 
 interface Class {
