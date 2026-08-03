@@ -11,6 +11,9 @@ import {
   Pagination,
   Button,
   Modal,
+  Form,
+  Input,
+  message,
   type MenuProps
 } from 'antd';
 import {
@@ -18,6 +21,7 @@ import {
   CalendarOutlined,
   BookOutlined,
   LogoutOutlined,
+  LockOutlined,
   NotificationOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router';
@@ -63,6 +67,7 @@ import Cookies from 'js-cookie';
 import dayjs from 'dayjs';
 import { getMyClass, getMySessions } from '../lib/learningApi';
 import { getAnnouncements } from '../lib/announcementApi';
+import { changePassword } from '../lib/authAPI';
 import { useEffect, useState } from 'react';
 
 interface Class {
@@ -86,6 +91,12 @@ interface ClassSession {
     absences: Absence[];
 }
 
+interface ChangePasswordFormValues {
+  oldPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const [enrolledClass, setEnrolledClass] = useState<Class | null>(null);
@@ -95,6 +106,11 @@ export default function Dashboard() {
   const [announcementPage, setAnnouncementPage] = useState(1);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<any>(null);
   const announcementPageSize = 4;
+
+  // --- Ubah Password state ---
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [changePasswordLoading, setChangePasswordLoading] = useState(false);
+  const [changePasswordForm] = Form.useForm<ChangePasswordFormValues>();
 
   const fetchDashboardData = async () => {
     try {
@@ -155,6 +171,42 @@ export default function Dashboard() {
   const userJson = localStorage.getItem('user');
   const user = userJson ? JSON.parse(userJson) : { username: 'Guest', email: '' };
 
+  const handleOpenChangePassword = () => {
+    changePasswordForm.resetFields();
+    setIsChangePasswordOpen(true);
+  };
+
+  const handleCloseChangePassword = () => {
+    setIsChangePasswordOpen(false);
+    changePasswordForm.resetFields();
+  };
+
+  const handleChangePasswordSubmit = async () => {
+    try {
+      const values = await changePasswordForm.validateFields();
+      setChangePasswordLoading(true);
+
+      await changePassword({
+        oldPassword: values.oldPassword,
+        newPassword: values.newPassword,
+        confirmPassword: values.confirmPassword,
+      });
+
+      message.success('Password berhasil diubah.');
+      handleCloseChangePassword();
+    } catch (error: any) {
+      // Validation error dari antd form (belum submit ke server)
+      if (error?.errorFields) return;
+
+      const apiMessage =
+        error?.response?.data?.message ||
+        'Gagal mengubah password. Silakan coba lagi.';
+      message.error(apiMessage);
+    } finally {
+      setChangePasswordLoading(false);
+    }
+  };
+
   const userMenuItems: MenuProps['items'] = [
     {
       key: 'user-info',
@@ -166,6 +218,13 @@ export default function Dashboard() {
       ),
       disabled: true,
       className: '!cursor-default',
+    },
+    { type: 'divider' },
+    {
+      key: 'change-password',
+      icon: <LockOutlined />,
+      label: 'Ubah Password',
+      onClick: handleOpenChangePassword,
     },
     { type: 'divider' },
     {
@@ -408,6 +467,74 @@ export default function Dashboard() {
           </Card>
         </div>
       </Content>
+
+      {/* Ubah Password Modal */}
+      <Modal
+        title="Ubah Password"
+        open={isChangePasswordOpen}
+        onCancel={handleCloseChangePassword}
+        centered
+        destroyOnClose
+        footer={[
+          <Button key="batal" onClick={handleCloseChangePassword}>
+            Batal
+          </Button>,
+          <Button
+            key="simpan"
+            type="primary"
+            loading={changePasswordLoading}
+            onClick={handleChangePasswordSubmit}
+            className="bg-blue-600 hover:bg-blue-700 border-none"
+          >
+            Simpan
+          </Button>,
+        ]}
+      >
+        <Form
+          form={changePasswordForm}
+          layout="vertical"
+          requiredMark="optional"
+          className="mt-2"
+        >
+          <Form.Item
+            label="Password Lama"
+            name="oldPassword"
+            rules={[{ required: true, message: 'Password lama wajib diisi' }]}
+          >
+            <Input.Password placeholder="Masukkan password lama" />
+          </Form.Item>
+
+          <Form.Item
+            label="Password Baru"
+            name="newPassword"
+            rules={[
+              { required: true, message: 'Password baru wajib diisi' },
+              { min: 8, message: 'Password baru minimal 8 karakter' },
+            ]}
+          >
+            <Input.Password placeholder="Masukkan password baru" />
+          </Form.Item>
+
+          <Form.Item
+            label="Konfirmasi Password Baru"
+            name="confirmPassword"
+            dependencies={['newPassword']}
+            rules={[
+              { required: true, message: 'Konfirmasi password wajib diisi' },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue('newPassword') === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error('Konfirmasi password baru tidak cocok'));
+                },
+              }),
+            ]}
+          >
+            <Input.Password placeholder="Ulangi password baru" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </Layout>
   );
 }
