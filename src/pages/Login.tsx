@@ -25,6 +25,7 @@ const { Title, Text } = Typography;
 export default function Login() {
   const navigate = useNavigate();
   const { message } = App.useApp();
+  const [form] = Form.useForm();
 
   const [loading, setLoading] = useState(false);
 
@@ -77,7 +78,10 @@ export default function Login() {
       const err = error as any;
       console.error('Login error:', err);
       const errorMsg = err.response?.data?.msg || err.response?.data?.message || err.message || 'Invalid username or password';
-      message.error(errorMsg);
+      form.setFields([
+        { name: "username", errors: [errorMsg] },
+        { name: "password", errors: [errorMsg] },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -153,6 +157,7 @@ export default function Login() {
             </div>
 
             <Form
+              form={form}
               layout="vertical"
               onFinish={onFinish}
               autoComplete="off"
