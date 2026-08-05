@@ -186,10 +186,9 @@ export default function Dashboard() {
       const values = await changePasswordForm.validateFields();
       setChangePasswordLoading(true);
 
-      await changePassword({
+      await authAPI.changePassword({
         oldPassword: values.oldPassword,
         newPassword: values.newPassword,
-        confirmPassword: values.confirmPassword,
       });
 
       message.success('Password berhasil diubah.');
