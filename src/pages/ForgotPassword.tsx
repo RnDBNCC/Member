@@ -1,31 +1,44 @@
+import { MailOutlined, ArrowLeftOutlined } from "@ant-design/icons";
+import {
+  Layout,
+  Card,
+  Typography,
+  Form,
+  Input,
+  Button,
+  message,
+  Space,
+} from "antd";
 import { useState } from "react";
-import { Card, Form, Input, Button, Typography, App } from "antd";
-import { MailOutlined } from "@ant-design/icons";
-import { Link } from "react-router";
-
+import { useNavigate } from "react-router";
 import { authAPI } from "../lib/authAPI";
 
-const { Title, Text } = Typography;
+const { Header, Content } = Layout;
 
-export default function ForgotPassword() {
+type ForgotPasswordForm = {
+  email: string;
+};
+
+const ForgotPassword = () => {
+  const navigate = useNavigate();
+
   const [loading, setLoading] = useState(false);
-  const { message } = App.useApp();
 
-  const onFinish = async (values: { email: string }) => {
-    setLoading(true);
-
+  const handleSubmit = async (values: ForgotPasswordForm) => {
     try {
-      const response = await authAPI.forgotPassword(values.email);
+      setLoading(true);
+
+      await authAPI.forgotPassword(values.email);
 
       message.success(
-        response.data?.message ||
-          "If that email address is registered, you will receive a reset link shortly."
+        "If the email is registered, a password reset link has been sent."
       );
-    } catch (error: any) {
-      console.error(error);
 
+      navigate("/login");
+    } catch (error) {
+      const err = error as any;
       message.error(
-        error?.response?.data?.message ||
+        err?.response?.data?.message ??
           "Failed to send reset password email."
       );
     } finally {
@@ -34,68 +47,108 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center bg-[#f5f5f5]"
-      style={{ padding: 24 }}
-    >
-      <Card
+    <Layout style={{ minHeight: "100vh" }}>
+      <Header
         style={{
-          width: 450,
-          borderRadius: 16,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#1890ff",
+          color: "#fff",
+          fontSize: "20px",
+          fontWeight: "bold",
+          letterSpacing: 2,
         }}
       >
-        <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <Title level={3}>Forgot Password</Title>
+        BNCC MEMBER APP
+      </Header>
 
-          <Text type="secondary">
-            Enter your email address and we will send you a password reset link.
-          </Text>
-        </div>
-
-        <Form layout="vertical" onFinish={onFinish}>
-          <Form.Item
-            label="Email"
-            name="email"
-            rules={[
-              {
-                required: true,
-                message: "Please enter your email",
-              },
-              {
-                type: "email",
-                message: "Invalid email format",
-              },
-            ]}
-          >
-            <Input
-              prefix={<MailOutlined />}
-              placeholder="example@bncc.net"
-              size="large"
-            />
-          </Form.Item>
-
-          <Button
-            type="primary"
-            htmlType="submit"
-            block
-            size="large"
-            loading={loading}
-          >
-            Send Reset Link
-          </Button>
-        </Form>
-
-        <div
+      <Content
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 24,
+          background:
+            "linear-gradient(180deg,#f5f5f5 0%,#ececec 100%)",
+        }}
+      >
+        <Card
           style={{
-            marginTop: 20,
-            textAlign: "center",
+            width: "100%",
+            maxWidth: 430,
+            boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
           }}
         >
-          <Link to="/login">
-            Back to Login
-          </Link>
-        </div>
-      </Card>
-    </div>
+          <div style={{ textAlign: "center", marginBottom: 24 }}>
+            <Typography.Title
+              level={3}
+              style={{ marginBottom: 8, color: "#1890ff" }}
+            >
+              Forgot Password
+            </Typography.Title>
+
+            <Typography.Text type="secondary">
+              Enter your email address.
+              <br />
+              We'll send you a link to reset your password.
+            </Typography.Text>
+          </div>
+
+          <Form
+            layout="vertical"
+            onFinish={handleSubmit}
+            autoComplete="off"
+          >
+            <Form.Item
+              label="Email"
+              name="email"
+              rules={[
+                {
+                  required: true,
+                  message: "Please enter your email",
+                },
+                {
+                  type: "email",
+                  message: "Invalid email format",
+                },
+              ]}
+            >
+              <Input
+                size="large"
+                prefix={<MailOutlined />}
+                placeholder="example@bncc.net"
+              />
+            </Form.Item>
+
+            <Space
+              direction="vertical"
+              style={{ width: "100%" }}
+              size="middle"
+            >
+              <Button
+                type="primary"
+                htmlType="submit"
+                block
+                size="large"
+                loading={loading}
+              >
+                Send Reset Link
+              </Button>
+
+              <Button
+                icon={<ArrowLeftOutlined />}
+                block
+                onClick={() => navigate("/login")}
+              >
+                Back to Login
+              </Button>
+            </Space>
+          </Form>
+        </Card>
+      </Content>
+    </Layout>
   );
-}
+};
+
+export default ForgotPassword;

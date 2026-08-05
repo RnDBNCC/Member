@@ -23,3 +23,13 @@ export const authAPI = {
   }) =>
     API.put("/users/password", data),
 };
+
+export interface ForgotPasswordPayload {
+  email: string;
+  appCode: string;
+}
+
+export const forgotPassword = async (payload: ForgotPasswordPayload) => {
+  const response = await apiClient.post("/forgot-password", payload);
+  return response.data;
+};
