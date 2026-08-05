@@ -26,13 +26,9 @@ export default function Login() {
   const navigate = useNavigate();
   const { message } = App.useApp();
 
-<<<<<<< HEAD
   const [loading, setLoading] = useState(false);
 
-  const onFinish = async (values: any) => {
-=======
   const onFinish = async (values: Record<string, any>) => {
->>>>>>> 212f679 (style(auth): fix eslint implicit any typing)
     setLoading(true);
 
     try {
@@ -55,8 +51,6 @@ export default function Login() {
         setLoading(false);
         return;
       }
-<<<<<<< HEAD
-
       Cookies.set("token", token, {
         expires: 7,
       });
@@ -79,23 +73,12 @@ export default function Login() {
       message.success("Login successful!");
 
       navigate("/dashboard");
-    } catch (error: any) {
-      console.error(error);
-
-      const errorMessage =
-        error.response?.data?.msg ||
-        error.response?.data?.message ||
-        "Invalid username or password";
-
-      message.error(errorMessage);
-    } finally {
-=======
     } catch (error) {
       const err = error as any;
       console.error('Login error:', err);
       const errorMsg = err.response?.data?.msg || err.response?.data?.message || err.message || 'Invalid username or password';
       message.error(errorMsg);
->>>>>>> 212f679 (style(auth): fix eslint implicit any typing)
+    } finally {
       setLoading(false);
     }
   };
