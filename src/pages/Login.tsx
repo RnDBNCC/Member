@@ -181,13 +181,8 @@ export default function Login() {
 
               <Form.Item
                 name="password"
-                rules={[
-                  {
-                    required: true,
-                    message:
-                      "Please input your Password!",
-                  },
-                ]}
+                rules={[{ required: true, message: 'Please input your Password!' }]}
+                className="mb-2"
               >
                 <Input.Password
                   prefix={<LockOutlined />}
@@ -196,23 +191,13 @@ export default function Login() {
                 />
               </Form.Item>
 
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  marginBottom: 16,
-                }}
-              >
-                <Button
-                  type="link"
-                  style={{ padding: 0 }}
-                  onClick={() =>
-                    navigate("/forgot-password")
-                  }
-                >
+              <div className="flex justify-end mb-4">
+                <a onClick={() => navigate('/forgot-password')} className="text-sm text-blue-600 hover:text-blue-500 font-medium cursor-pointer">
                   Forgot Password?
-                </Button>
+                </a>
               </div>
+
+              <Form.Item className="mt-4 mb-0">
 
               <Form.Item className="mb-0">
                 <Button

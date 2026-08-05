@@ -15,9 +15,9 @@ function App() {
       <AntdApp>
         <BrowserRouter>
           <Routes>
+            <Route path="/" element={<Login />} />
             <Route path="/login" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
-
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/session/:id" element={<SessionDetail />} />
           </Routes>
