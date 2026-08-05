@@ -35,9 +35,10 @@ const ForgotPassword = () => {
       );
 
       navigate("/login");
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as any;
       message.error(
-        error?.response?.data?.message ??
+        err?.response?.data?.message ??
           "Failed to send reset password email."
       );
     } finally {
