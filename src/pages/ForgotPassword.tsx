@@ -6,8 +6,8 @@ import {
   Form,
   Input,
   Button,
-  message,
   Space,
+  App,
 } from "antd";
 import { useState } from "react";
 import { useNavigate } from "react-router";
@@ -21,6 +21,7 @@ type ForgotPasswordForm = {
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
+  const { message } = App.useApp();
 
   const [loading, setLoading] = useState(false);
 
@@ -34,9 +35,7 @@ const ForgotPassword = () => {
         "If the email is registered, a password reset link has been sent."
       );
 
-      setTimeout(() => {
-        navigate("/login");
-      }, 500);
+      navigate("/login");
     } catch (error) {
       const err = error as any;
       message.error(
