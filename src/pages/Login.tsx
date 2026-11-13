@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import {
   Card,
@@ -17,7 +17,7 @@ import bnccWhiteLogo from "../assets/bncc-white.png";
 import bnccBlackLogo from "../assets/bncc-black.png";
 import smileImg from "../assets/Smile.png";
 
-import { authService, decodeJWT } from "../lib/api";
+import { authService, clearMemberAuth, decodeJWT, isMemberUser } from "../lib/api";
 import Cookies from "js-cookie";
 
 const { Title, Text } = Typography;
@@ -28,6 +28,18 @@ export default function Login() {
   const [form] = Form.useForm();
 
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const token = Cookies.get("token");
+    if (token) {
+      const decoded = decodeJWT(token);
+      if (isMemberUser(decoded)) {
+        navigate("/dashboard", { replace: true });
+      } else {
+        clearMemberAuth();
+      }
+    }
+  }, [navigate]);
 
   const onFinish = async (values: Record<string, any>) => {
     setLoading(true);
@@ -52,6 +64,18 @@ export default function Login() {
         setLoading(false);
         return;
       }
+
+      const decoded = decodeJWT(token);
+      if (!isMemberUser(decoded)) {
+        clearMemberAuth();
+        const accessDeniedMsg = "Akses ditolak. Akun Anda bukan akun Member BNCC.";
+        form.setFields([
+          { name: "username", errors: [accessDeniedMsg] },
+          { name: "password", errors: [accessDeniedMsg] },
+        ]);
+        return;
+      }
+
       Cookies.set("token", token, {
         expires: 7,
       });
@@ -61,8 +85,6 @@ export default function Login() {
           expires: 7,
         });
       }
-
-      const decoded = decodeJWT(token);
 
       if (decoded) {
         localStorage.setItem(

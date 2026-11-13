@@ -41,3 +41,17 @@ export const decodeJWT = (token: string) => {
     return null;
   }
 };
+
+export const isMemberUser = (decoded: any): boolean => {
+  if (!decoded) return false;
+  const roles = Array.isArray(decoded.roles) ? decoded.roles : [];
+  const globalRoles = Array.isArray(decoded.globalRoles) ? decoded.globalRoles : [];
+  const allRoles = [...roles, ...globalRoles].map((r: string) => String(r).toLowerCase());
+  return allRoles.includes("member");
+};
+
+export const clearMemberAuth = () => {
+  Cookies.remove("token");
+  Cookies.remove("refreshToken");
+  localStorage.removeItem("user");
+};
