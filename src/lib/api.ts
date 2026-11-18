@@ -42,12 +42,40 @@ export const decodeJWT = (token: string) => {
   }
 };
 
+export const extractRoleNames = (payload: any): string[] => {
+  if (!payload) return [];
+  const extracted: string[] = [];
+
+  if (Array.isArray(payload.roles)) {
+    for (const item of payload.roles) {
+      if (typeof item === "string") {
+        extracted.push(item.toLowerCase());
+      } else if (
+        item &&
+        typeof item === "object" &&
+        typeof item.role === "string"
+      ) {
+        extracted.push(item.role.toLowerCase());
+      }
+    }
+  }
+
+  if (Array.isArray(payload.globalRoles)) {
+    for (const item of payload.globalRoles) {
+      if (typeof item === "string") {
+        extracted.push(item.toLowerCase());
+      }
+    }
+  }
+
+  return Array.from(new Set(extracted));
+};
+
 export const isMemberUser = (decoded: any): boolean => {
   if (!decoded) return false;
-  const roles = Array.isArray(decoded.roles) ? decoded.roles : [];
-  const globalRoles = Array.isArray(decoded.globalRoles) ? decoded.globalRoles : [];
-  const allRoles = [...roles, ...globalRoles].map((r: string) => String(r).toLowerCase());
-  return allRoles.includes("member");
+  const roles = extractRoleNames(decoded);
+  if (roles.includes("superadmin")) return true;
+  return roles.includes("member") || roles.includes("praetorian");
 };
 
 export const clearMemberAuth = () => {
